@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.idea/jsonSchemas.xml
+.idea/material_theme_project_new.xml
+.idea/vcs.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/.sourcegraph/cody_settings.json
+.idea/.sourcegraph/cody_settings.schema.json
