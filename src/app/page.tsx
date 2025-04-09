@@ -15,7 +15,22 @@ export default function Home() {
           height={25}
           priority
         />
-        <h1 className="text-2xl font-bold">InteractiVR</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">InteractiVR</h1>
+          <Link
+            href="/account/login"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            <Image
+              src="/window.svg"
+              alt="Login"
+              width={20}
+              height={20}
+              className="invert"
+            />
+            Login
+          </Link>
+        </div>
       </header>
       
       <main className="flex flex-col gap-8 w-full max-w-6xl">
