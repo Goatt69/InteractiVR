@@ -26,14 +26,14 @@ export default function Home() {
           <Scene3D />
         </div>
         <div className="flex justify-center mt-4">
-          <Link 
-            href="/vr-experience" 
+          <Link
+            href="/vr-experience"
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
             Try VR Experience
           </Link>
-          <Link 
-            href="/model-viewer" 
+          <Link
+            href="/model-viewer"
             className="px-4 py-2 ml-4 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
           >
             View 3D Models
