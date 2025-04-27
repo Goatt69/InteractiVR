@@ -5,10 +5,7 @@ import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useState, Suspense, ReactNode, useRef, useEffect } from 'react'
 import { useGLTF, OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { Mesh, Object3D, Vector3, Group } from 'three'
-import solarSystemObjects, { SpaceObject } from '@/app/data/solarSystem'
 import ObjectInfoCard from './ObjectInfoCard'
-
-const store = createXRStore()
 
 // Custom hooks for keyboard interaction
 const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
@@ -96,48 +93,21 @@ function MovementControls() {
     return null
 }
 
-function SolarSystemContent() {
-    const { nodes } = useGLTF('/models/Space.glb')
-    const [hoveredObject, setHoveredObject] = useState<SpaceObject | null>(null)
+function SolarSystemContent({ modelPath }: { modelPath: string }) {
+    const { nodes } = useGLTF(modelPath)
+    const [hoveredObject, setHoveredObject] = useState<null | any>(null)
     const [showInfo, setShowInfo] = useState(false)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
-    
-    // Function to find a space object by its identifier
-    const findSpaceObject = (name: string): SpaceObject | undefined => {
-        return solarSystemObjects.find(obj => 
-            obj.objectIdentifier.toLowerCase() === name.toLowerCase())
-    }
-
-    // Keyboard shortcuts to focus on planets
-    useKeyPressEvent('1', () => focusOnPlanet('Sun'))
-    useKeyPressEvent('2', () => focusOnPlanet('Mercury'))
-    useKeyPressEvent('3', () => focusOnPlanet('Venus'))
-    useKeyPressEvent('4', () => focusOnPlanet('Earth'))
-    useKeyPressEvent('5', () => focusOnPlanet('Mars'))
-    useKeyPressEvent('6', () => focusOnPlanet('Jupiter'))
-    useKeyPressEvent('7', () => focusOnPlanet('Saturn'))
-    useKeyPressEvent('8', () => focusOnPlanet('Uranus'))
-    useKeyPressEvent('9', () => focusOnPlanet('Neptune'))
-    
-    const focusOnPlanet = (planetName: string) => {
-        const planet = findSpaceObject(planetName)
-        if (planet) {
-            setHoveredObject(planet)
-            setShowInfo(true)
-        }
-    }
 
     // Create 3D objects from the model
     const renderSolarSystemObjects = () => {
         const objects: ReactNode[] = []
         
         // Loop through all the nodes in the GLTF model
-        Object.entries(nodes).forEach(([nodeName, node]) => {
-            // Try to find corresponding object data
-            const objectData = findSpaceObject(nodeName)
-            
-            if (objectData && (node as Object3D).type === 'Mesh') {
+        Object.entries(nodes).forEach(([nodeName, node]: [string, Object3D]) => {
+            // Render mesh nodes only
+            if ((node as Object3D).type === 'Mesh') {
                 const mesh = node as unknown as Mesh
                 
                 objects.push(
@@ -153,7 +123,7 @@ function SolarSystemContent() {
                         receiveShadow
                         onPointerOver={(e) => {
                             e.stopPropagation()
-                            setHoveredObject(objectData)
+                            setHoveredObject(nodeName)
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
@@ -173,8 +143,6 @@ function SolarSystemContent() {
 
     return (
         <>
-            
-            {/* Add ambient and directional light */}
             <ambientLight intensity={0.3} />
             <directionalLight 
                 position={[10, 10, 5]} 
@@ -189,24 +157,20 @@ function SolarSystemContent() {
                 shadow-bias={-0.00001}
             />
             
-            {/* Camera setup */}
             <PerspectiveCamera makeDefault position={[0, 5, 10]} />
             
-            {/* WASD movement controls */}
             <MovementControls />
             
-            {/* Render the solar system objects */}
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
             
-            {/* Show info card when hovering and clicked */}
             {hoveredObject && showInfo && (
                 <ObjectInfoCard
-                    name={hoveredObject.name}
-                    id={hoveredObject.id}
-                    objectIdentifier={hoveredObject.objectIdentifier}
-                    vocabularyItems={hoveredObject.vocabularyItems}
+                    name={hoveredObject}
+                    id={0}
+                    objectIdentifier={hoveredObject}
+                    vocabularyItems={[]}
                     onClose={() => setShowInfo(false)}
                     position={[0, 0.5, -1]}
                 />
@@ -215,26 +179,47 @@ function SolarSystemContent() {
                 files="/environments/Sky.hdr" 
                 background 
             />
-            {/* Controls for camera - only show when not in VR */}
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>
     )
 }
 
 interface VRSceneProps {
-    fullScreen?: boolean
+    fullScreen?: boolean,
+    modelPath?: string
 }
 
-export default function VRScene({ fullScreen = false }: VRSceneProps) {
-    // Preload the models
-    useGLTF.preload('/models/Space.glb')
+export default function VRScene({ fullScreen = false, modelPath = '/models/Space.glb' }: VRSceneProps) {
+    useGLTF.preload(modelPath)
+    
+    const store = createXRStore()
+
+    const [hasError, setHasError] = useState(false)
+
+    if (hasError) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-black text-white">
+                <p>VR session error occurred. Please try again.</p>
+            </div>
+        )
+    }
+
+    const ErrorBoundaryWrapper = ({ children }: { children: ReactNode }) => {
+        try {
+            return <>{children}</>
+        } catch (error) {
+            console.error('Error in XR session:', error)
+            setHasError(true)
+            return null
+        }
+    }
     
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
             {!fullScreen && (
                 <button
                     onClick={() => store.enterVR()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 mb-4"
+                    className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105 mb-4"
                 >
                     Enter VR
                 </button>
@@ -243,7 +228,7 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             {fullScreen && (
                 <button
                     onClick={() => store.enterVR()}
-                    className="absolute top-4 right-4 z-10 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    className="absolute top-6 right-6 z-10 bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105"
                 >
                     Enter VR
                 </button>
@@ -256,13 +241,15 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             >
                 <XR store={store}>
                     <Suspense fallback={null}>
-                        <SolarSystemContent />
+                        <ErrorBoundaryWrapper>
+                            <SolarSystemContent modelPath={modelPath} />
+                        </ErrorBoundaryWrapper>
                     </Suspense>
                 </XR>
             </Canvas>
 
             {fullScreen && (
-                <div className="absolute bottom-4 left-4 z-10 bg-black/50 text-white p-3 rounded-md">
+                <div className="absolute bottom-6 left-6 z-10 bg-black/60 text-white p-4 rounded-lg shadow-lg">
                     <p className="text-sm">Press 1-9 keys to focus on different planets</p>
                     <p className="text-sm">Move with WASD | Orbit with mouse | Zoom with scroll</p>
                 </div>
