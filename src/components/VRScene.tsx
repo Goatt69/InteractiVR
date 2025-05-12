@@ -142,7 +142,6 @@ function SolarSystemContent() {
                 files="/environments/Sky.hdr" 
                 background 
             />
-            {/* Controls for camera - only show when not in VR */}
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>
     )
@@ -163,7 +162,7 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             {!fullScreen && (
                 <button
                     onClick={() => store.enterVR()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 mb-4"
+                    className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105 mb-4"
                 >
                     Enter VR
                 </button>
@@ -172,7 +171,7 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             {fullScreen && (
                 <button
                     onClick={() => store.enterVR()}
-                    className="absolute top-4 right-4 z-10 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    className="absolute top-6 right-6 z-10 bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105"
                 >
                     Enter VR
                 </button>
@@ -185,13 +184,13 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             >
                 <XR store={store}>
                     <Suspense fallback={null}>
-                        <SolarSystemContent />
+                            <SolarSystemContent/>
                     </Suspense>
                 </XR>
             </Canvas>
 
             {fullScreen && (
-                <div className="absolute bottom-4 left-4 z-10 bg-black/50 text-white p-3 rounded-md">
+                <div className="absolute bottom-6 left-6 z-10 bg-black/60 text-white p-4 rounded-lg shadow-lg">
                     <p className="text-sm">Press 1-9 keys to focus on different planets</p>
                     <p className="text-sm">Move with WASD | Orbit with mouse | Zoom with scroll</p>
                 </div>
