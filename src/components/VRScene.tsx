@@ -1,11 +1,14 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useState, Suspense, ReactNode, useRef, useEffect } from 'react'
-import { useGLTF, OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
-import { Mesh, Object3D, Vector3, Group } from 'three'
+import { useGLTF, OrbitControls, PerspectiveCamera, Environment, useFont } from '@react-three/drei';
+import { Mesh, Object3D, Group } from 'three'
+import solarSystemObjects, { SpaceObject } from '@/app/data/solarSystem'
 import ObjectInfoCard from './ObjectInfoCard'
+
+const store = createXRStore()
 
 // Custom hooks for keyboard interaction
 const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
@@ -23,91 +26,48 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
     }, [targetKey, onKeyPress])
 }
 
-// Movement controls using WASD keys
-function MovementControls() {
-    const { camera } = useThree()
-    const keysPressed = useRef({
-        w: false,
-        a: false,
-        s: false,
-        d: false,
-        shift: false
-    })
-    
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'w') keysPressed.current.w = true
-            if (e.key.toLowerCase() === 'a') keysPressed.current.a = true
-            if (e.key.toLowerCase() === 's') keysPressed.current.s = true
-            if (e.key.toLowerCase() === 'd') keysPressed.current.d = true
-            if (e.key === 'Shift') keysPressed.current.shift = true
-        }
-        
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'w') keysPressed.current.w = false
-            if (e.key.toLowerCase() === 'a') keysPressed.current.a = false
-            if (e.key.toLowerCase() === 's') keysPressed.current.s = false
-            if (e.key.toLowerCase() === 'd') keysPressed.current.d = false
-            if (e.key === 'Shift') keysPressed.current.shift = false
-        }
-        
-        window.addEventListener('keydown', handleKeyDown)
-        window.addEventListener('keyup', handleKeyUp)
-        
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-            window.removeEventListener('keyup', handleKeyUp)
-        }
-    }, [])
-    
-    useFrame((_, delta) => {
-        // Calculate movement speed (faster with shift)
-        const speed = keysPressed.current.shift ? 10 : 5
-        const moveDistance = speed * delta
-        
-        // Get the camera's forward, right and up vectors
-        const forward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
-        const right = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
-        
-        // Remove any vertical component for forward/backward movement
-        forward.y = 0
-        forward.normalize()
-        
-        // Move forward/backward
-        if (keysPressed.current.w) {
-            camera.position.addScaledVector(forward, moveDistance)
-        }
-        if (keysPressed.current.s) {
-            camera.position.addScaledVector(forward, -moveDistance)
-        }
-        
-        // Move left/right
-        if (keysPressed.current.a) {
-            camera.position.addScaledVector(right, -moveDistance)
-        }
-        if (keysPressed.current.d) {
-            camera.position.addScaledVector(right, moveDistance)
-        }
-    })
-    
-    return null
-}
-
-function SolarSystemContent({ modelPath }: { modelPath: string }) {
-    const { nodes } = useGLTF(modelPath)
-    const [hoveredObject, setHoveredObject] = useState<null | any>(null)
+function SolarSystemContent() {
+    const { nodes } = useGLTF('/models/Space.glb')
+    const [hoveredObject, setHoveredObject] = useState<SpaceObject | null>(null)
     const [showInfo, setShowInfo] = useState(false)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
+    
+    // Function to find a space object by its identifier
+    const findSpaceObject = (name: string): SpaceObject | undefined => {
+        return solarSystemObjects.find(obj => 
+            obj.objectIdentifier.toLowerCase() === name.toLowerCase())
+    }
+
+    // Keyboard shortcuts to focus on planets
+    useKeyPressEvent('1', () => focusOnPlanet('Sun'))
+    useKeyPressEvent('2', () => focusOnPlanet('Mercury'))
+    useKeyPressEvent('3', () => focusOnPlanet('Venus'))
+    useKeyPressEvent('4', () => focusOnPlanet('Earth'))
+    useKeyPressEvent('5', () => focusOnPlanet('Mars'))
+    useKeyPressEvent('6', () => focusOnPlanet('Jupiter'))
+    useKeyPressEvent('7', () => focusOnPlanet('Saturn'))
+    useKeyPressEvent('8', () => focusOnPlanet('Uranus'))
+    useKeyPressEvent('9', () => focusOnPlanet('Neptune'))
+    
+    const focusOnPlanet = (planetName: string) => {
+        const planet = findSpaceObject(planetName)
+        if (planet) {
+            setHoveredObject(planet)
+            setShowInfo(true)
+        }
+    }
 
     // Create 3D objects from the model
     const renderSolarSystemObjects = () => {
         const objects: ReactNode[] = []
         
         // Loop through all the nodes in the GLTF model
-        Object.entries(nodes).forEach(([nodeName, node]: [string, Object3D]) => {
-            // Render mesh nodes only
-            if ((node as Object3D).type === 'Mesh') {
+        Object.entries(nodes).forEach(([nodeName, node]) => {
+            // Try to find corresponding object data
+            const objectData = findSpaceObject(nodeName)
+            
+            if (objectData && (node as Object3D).type === 'Mesh') {
                 const mesh = node as unknown as Mesh
                 
                 objects.push(
@@ -123,7 +83,7 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                         receiveShadow
                         onPointerOver={(e) => {
                             e.stopPropagation()
-                            setHoveredObject(nodeName)
+                            setHoveredObject(objectData)
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
@@ -143,6 +103,8 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
 
     return (
         <>
+            
+            {/* Add ambient and directional light */}
             <ambientLight intensity={0.3} />
             <directionalLight 
                 position={[10, 10, 5]} 
@@ -156,21 +118,22 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                 shadow-camera-bottom={-10}
                 shadow-bias={-0.00001}
             />
-            
+
+            {/* Camera setup */}
             <PerspectiveCamera makeDefault position={[0, 5, 10]} />
-            
-            <MovementControls />
-            
+
+            {/* Render the solar system objects */}
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
-            
+
+            {/* Show info card when hovering and clicked */}
             {hoveredObject && showInfo && (
                 <ObjectInfoCard
-                    name={hoveredObject}
-                    id={0}
-                    objectIdentifier={hoveredObject}
-                    vocabularyItems={[]}
+                    name={hoveredObject.name}
+                    id={hoveredObject.id}
+                    objectIdentifier={hoveredObject.objectIdentifier}
+                    vocabularyItems={hoveredObject.vocabularyItems}
                     onClose={() => setShowInfo(false)}
                     position={[0, 0.5, -1]}
                 />
@@ -185,34 +148,14 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
 }
 
 interface VRSceneProps {
-    fullScreen?: boolean,
-    modelPath?: string
+    fullScreen?: boolean
 }
 
-export default function VRScene({ fullScreen = false, modelPath = '/models/Space.glb' }: VRSceneProps) {
-    useGLTF.preload(modelPath)
-    
-    const store = createXRStore()
-
-    const [hasError, setHasError] = useState(false)
-
-    if (hasError) {
-        return (
-            <div className="w-full h-full flex items-center justify-center bg-black text-white">
-                <p>VR session error occurred. Please try again.</p>
-            </div>
-        )
-    }
-
-    const ErrorBoundaryWrapper = ({ children }: { children: ReactNode }) => {
-        try {
-            return <>{children}</>
-        } catch (error) {
-            console.error('Error in XR session:', error)
-            setHasError(true)
-            return null
-        }
-    }
+export default function VRScene({ fullScreen = false }: VRSceneProps) {
+    // Preload the models and fonts
+    useGLTF.preload('/models/Space.glb')
+    useFont.preload('/fonts/Quicksand-msdf.json')
+    useFont.preload('/fonts/TIMES.TTF-msdf.json')
     
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
@@ -241,9 +184,7 @@ export default function VRScene({ fullScreen = false, modelPath = '/models/Space
             >
                 <XR store={store}>
                     <Suspense fallback={null}>
-                        <ErrorBoundaryWrapper>
-                            <SolarSystemContent modelPath={modelPath} />
-                        </ErrorBoundaryWrapper>
+                            <SolarSystemContent/>
                     </Suspense>
                 </XR>
             </Canvas>
