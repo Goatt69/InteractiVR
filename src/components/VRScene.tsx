@@ -1,10 +1,10 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useState, Suspense, ReactNode, useRef, useEffect } from 'react'
-import { useGLTF, OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
-import { Mesh, Object3D, Vector3, Group } from 'three'
+import { useGLTF, OrbitControls, PerspectiveCamera, Environment, useFont } from '@react-three/drei';
+import { Mesh, Object3D, Group } from 'three'
 import solarSystemObjects, { SpaceObject } from '@/app/data/solarSystem'
 import ObjectInfoCard from './ObjectInfoCard'
 
@@ -24,76 +24,6 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
             window.removeEventListener('keypress', handleKeyPress)
         }
     }, [targetKey, onKeyPress])
-}
-
-// Movement controls using WASD keys
-function MovementControls() {
-    const { camera } = useThree()
-    const keysPressed = useRef({
-        w: false,
-        a: false,
-        s: false,
-        d: false,
-        shift: false
-    })
-    
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'w') keysPressed.current.w = true
-            if (e.key.toLowerCase() === 'a') keysPressed.current.a = true
-            if (e.key.toLowerCase() === 's') keysPressed.current.s = true
-            if (e.key.toLowerCase() === 'd') keysPressed.current.d = true
-            if (e.key === 'Shift') keysPressed.current.shift = true
-        }
-        
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'w') keysPressed.current.w = false
-            if (e.key.toLowerCase() === 'a') keysPressed.current.a = false
-            if (e.key.toLowerCase() === 's') keysPressed.current.s = false
-            if (e.key.toLowerCase() === 'd') keysPressed.current.d = false
-            if (e.key === 'Shift') keysPressed.current.shift = false
-        }
-        
-        window.addEventListener('keydown', handleKeyDown)
-        window.addEventListener('keyup', handleKeyUp)
-        
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-            window.removeEventListener('keyup', handleKeyUp)
-        }
-    }, [])
-    
-    useFrame((_, delta) => {
-        // Calculate movement speed (faster with shift)
-        const speed = keysPressed.current.shift ? 10 : 5
-        const moveDistance = speed * delta
-        
-        // Get the camera's forward, right and up vectors
-        const forward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
-        const right = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
-        
-        // Remove any vertical component for forward/backward movement
-        forward.y = 0
-        forward.normalize()
-        
-        // Move forward/backward
-        if (keysPressed.current.w) {
-            camera.position.addScaledVector(forward, moveDistance)
-        }
-        if (keysPressed.current.s) {
-            camera.position.addScaledVector(forward, -moveDistance)
-        }
-        
-        // Move left/right
-        if (keysPressed.current.a) {
-            camera.position.addScaledVector(right, -moveDistance)
-        }
-        if (keysPressed.current.d) {
-            camera.position.addScaledVector(right, moveDistance)
-        }
-    })
-    
-    return null
 }
 
 function SolarSystemContent() {
@@ -188,18 +118,15 @@ function SolarSystemContent() {
                 shadow-camera-bottom={-10}
                 shadow-bias={-0.00001}
             />
-            
+
             {/* Camera setup */}
             <PerspectiveCamera makeDefault position={[0, 5, 10]} />
-            
-            {/* WASD movement controls */}
-            <MovementControls />
-            
+
             {/* Render the solar system objects */}
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
-            
+
             {/* Show info card when hovering and clicked */}
             {hoveredObject && showInfo && (
                 <ObjectInfoCard
@@ -226,8 +153,10 @@ interface VRSceneProps {
 }
 
 export default function VRScene({ fullScreen = false }: VRSceneProps) {
-    // Preload the models
+    // Preload the models and fonts
     useGLTF.preload('/models/Space.glb')
+    useFont.preload('/fonts/Quicksand-msdf.json')
+    useFont.preload('/fonts/TIMES.TTF-msdf.json')
     
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
