@@ -7,6 +7,11 @@ import { useGLTF, OrbitControls, PerspectiveCamera, Environment } from '@react-t
 import { Mesh, Object3D, Vector3, Group } from 'three'
 import ObjectInfoCard from './ObjectInfoCard'
 
+import solarSystemObjects, { SpaceObject } from '../app/data/solarSystem'
+
+// Create the XR store once at the top level
+const store = createXRStore()
+
 // Custom hooks for keyboard interaction
 const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
     useEffect(() => {
@@ -95,14 +100,80 @@ function MovementControls() {
 
 function SolarSystemContent({ modelPath }: { modelPath: string }) {
     const { nodes } = useGLTF(modelPath)
-    const [hoveredObject, setHoveredObject] = useState<null | any>(null)
+    const [hoveredObject, setHoveredObject] = useState<null | string>(null)
     const [showInfo, setShowInfo] = useState(false)
+    const [selectedObjectData, setSelectedObjectData] = useState<SpaceObject | null>(null)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
+    const { camera } = useThree()
+    const [cameraPosition, setCameraPosition] = useState<Vector3 | null>(null)
+
+    // Update camera position when camera changes
+    useEffect(() => {
+        setCameraPosition(camera.position.clone());
+    }, [camera.position]);
+
+    // Simplified function to find a space object by its identifier
+    const findSpaceObject = (name: string): SpaceObject | null => {
+        if (!Array.isArray(solarSystemObjects)) {
+            return null;
+        }
+
+        // Remove any suffix from node name
+        const cleanName = name.replace(/[_\d]+$/, '');
+        
+        // Search for object with case-insensitive matching
+        return solarSystemObjects.find(obj => 
+            obj.objectIdentifier?.toLowerCase() === name.toLowerCase() || 
+            obj.objectIdentifier?.toLowerCase() === cleanName.toLowerCase() ||
+            obj.name?.toLowerCase() === name.toLowerCase() ||
+            obj.name?.toLowerCase() === cleanName.toLowerCase()
+        ) || null;
+    }
+
+    // Create temporary object data if not found
+    const createTempSpaceObject = (name: string): SpaceObject => {
+        return {
+            id: Date.now(),
+            name: name,
+            objectIdentifier: name,
+            vocabularyItems: [
+                { id: 0, englishWord: 'Object', vietnameseTranslation: 'This is a space object.', pronunciation: '', examples: [] },
+                { id: 0, englishWord: 'Info', vietnameseTranslation: 'No detailed information available for this object.', pronunciation: '', examples: [] }
+            ],
+            interactable: true,
+            themeId: 0
+        };
+    }
+
+    // Keyboard shortcuts to focus on planets
+    useKeyPressEvent('1', () => focusOnPlanet('Sun'))
+    useKeyPressEvent('2', () => focusOnPlanet('Mercury'))
+    useKeyPressEvent('3', () => focusOnPlanet('Venus'))
+    useKeyPressEvent('4', () => focusOnPlanet('Earth'))
+    useKeyPressEvent('5', () => focusOnPlanet('Mars'))
+    useKeyPressEvent('6', () => focusOnPlanet('Jupiter'))
+    useKeyPressEvent('7', () => focusOnPlanet('Saturn'))
+    useKeyPressEvent('8', () => focusOnPlanet('Uranus'))
+    useKeyPressEvent('9', () => focusOnPlanet('Neptune'))
+
+    const focusOnPlanet = (planetName: string) => {
+        const planet = findSpaceObject(planetName);
+        if (planet) {
+            setHoveredObject(planetName);
+            setSelectedObjectData(planet);
+            setShowInfo(true);
+            setCameraPosition(camera.position.clone());
+        }
+    }
 
     // Create 3D objects from the model
     const renderSolarSystemObjects = () => {
         const objects: ReactNode[] = []
+        
+        if (!nodes) {
+            return objects;
+        }
         
         // Loop through all the nodes in the GLTF model
         Object.entries(nodes).forEach(([nodeName, node]: [string, Object3D]) => {
@@ -121,16 +192,29 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                         scale={mesh.scale}
                         castShadow
                         receiveShadow
+                        pointerEvents="auto"
                         onPointerOver={(e) => {
                             e.stopPropagation()
                             setHoveredObject(nodeName)
+                            document.body.style.cursor = 'pointer'
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
-                            setShowInfo(false)
+                            document.body.style.cursor = 'default'
                         }}
                         onClick={(e) => {
                             e.stopPropagation()
+                            
+                            // Find object in data
+                            const spaceObject = findSpaceObject(nodeName) || createTempSpaceObject(nodeName)
+                            
+                            // Update selected object data
+                            setSelectedObjectData(spaceObject)
+                            
+                            // Set camera position
+                            setCameraPosition(camera.position.clone())
+                            
+                            // Show info
                             setShowInfo(true)
                         }}
                     />
@@ -165,16 +249,24 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                 {renderSolarSystemObjects()}
             </group>
             
-            {hoveredObject && showInfo && (
+            {selectedObjectData && showInfo && cameraPosition && (
                 <ObjectInfoCard
-                    name={hoveredObject}
-                    id={0}
-                    objectIdentifier={hoveredObject}
-                    vocabularyItems={[]}
-                    onClose={() => setShowInfo(false)}
-                    position={[0, 0.5, -1]}
+                    name={selectedObjectData.name}
+                    id={selectedObjectData.id}
+                    objectIdentifier={selectedObjectData.objectIdentifier}
+                    vocabularyItems={selectedObjectData.vocabularyItems || []}
+                    onClose={() => {
+                        setShowInfo(false)
+                        setSelectedObjectData(null)
+                    }}
+                    position={[
+                        cameraPosition.x,
+                        cameraPosition.y,
+                        cameraPosition.z - 2
+                    ]}
                 />
             )}
+            
             <Environment 
                 files="/environments/Sky.hdr" 
                 background 
@@ -192,47 +284,20 @@ interface VRSceneProps {
 export default function VRScene({ fullScreen = false, modelPath = '/models/Space.glb' }: VRSceneProps) {
     useGLTF.preload(modelPath)
     
-    const store = createXRStore()
-
     const [hasError, setHasError] = useState(false)
-
-    if (hasError) {
-        return (
-            <div className="w-full h-full flex items-center justify-center bg-black text-white">
-                <p>VR session error occurred. Please try again.</p>
-            </div>
-        )
-    }
-
-    const ErrorBoundaryWrapper = ({ children }: { children: ReactNode }) => {
-        try {
-            return <>{children}</>
-        } catch (error) {
-            console.error('Error in XR session:', error)
-            setHasError(true)
-            return null
-        }
-    }
     
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
-            {!fullScreen && (
-                <button
-                    onClick={() => store.enterVR()}
-                    className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105 mb-4"
-                >
-                    Enter VR
-                </button>
-            )}
-
-            {fullScreen && (
-                <button
-                    onClick={() => store.enterVR()}
-                    className="absolute top-6 right-6 z-10 bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105"
-                >
-                    Enter VR
-                </button>
-            )}
+            <button
+                onClick={() => store.enterVR()}
+                className={`
+                    bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg 
+                    hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105
+                    ${fullScreen ? 'absolute top-6 right-6 z-10' : 'mb-4'}
+                `}
+            >
+                Enter VR
+            </button>
 
             <Canvas 
                 className="w-full h-full"
@@ -240,10 +305,13 @@ export default function VRScene({ fullScreen = false, modelPath = '/models/Space
                 gl={{ localClippingEnabled: true }}
             >
                 <XR store={store}>
-                    <Suspense fallback={null}>
-                        <ErrorBoundaryWrapper>
-                            <SolarSystemContent modelPath={modelPath} />
-                        </ErrorBoundaryWrapper>
+                    <Suspense fallback={
+                        <mesh>
+                            <boxGeometry args={[1, 1, 1]} />
+                            <meshStandardMaterial color="hotpink" />
+                        </mesh>
+                    }>
+                        <SolarSystemContent modelPath={modelPath} />
                     </Suspense>
                 </XR>
             </Canvas>
