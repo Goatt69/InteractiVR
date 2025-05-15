@@ -1,15 +1,13 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useState, Suspense, ReactNode, useRef, useEffect } from 'react'
-import { useGLTF, OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
-import { Mesh, Object3D, Vector3, Group } from 'three'
+import { useGLTF, OrbitControls, PerspectiveCamera, Environment, useFont } from '@react-three/drei';
+import { Mesh, Object3D, Group } from 'three'
+import solarSystemObjects, { SpaceObject } from '@/app/data/solarSystem'
 import ObjectInfoCard from './ObjectInfoCard'
 
-import solarSystemObjects, { SpaceObject } from '../app/data/solarSystem'
-
-// Create the XR store once at the top level
 const store = createXRStore()
 
 // Custom hooks for keyboard interaction
@@ -20,7 +18,7 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
                 onKeyPress()
             }
         }
-        
+
         window.addEventListener('keypress', handleKeyPress)
         return () => {
             window.removeEventListener('keypress', handleKeyPress)
@@ -28,52 +26,17 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
     }, [targetKey, onKeyPress])
 }
 
-function SolarSystemContent({ modelPath }: { modelPath: string }) {
-    const { nodes } = useGLTF(modelPath)
-    const [hoveredObject, setHoveredObject] = useState<null | string>(null)
+function SolarSystemContent() {
+    const { nodes } = useGLTF('/models/Space.glb')
+    const [hoveredObject, setHoveredObject] = useState<SpaceObject | null>(null)
     const [showInfo, setShowInfo] = useState(false)
-    const [selectedObjectData, setSelectedObjectData] = useState<SpaceObject | null>(null)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
-    const { camera } = useThree()
-    const [cameraPosition, setCameraPosition] = useState<Vector3 | null>(null)
 
-    // Update camera position when camera changes
-    useEffect(() => {
-        setCameraPosition(camera.position.clone());
-    }, [camera.position]);
-
-    // Simplified function to find a space object by its identifier
-    const findSpaceObject = (name: string): SpaceObject | null => {
-        if (!Array.isArray(solarSystemObjects)) {
-            return null;
-        }
-
-        // Remove any suffix from node name
-        const cleanName = name.replace(/[_\d]+$/, '');
-
-        // Search for object with case-insensitive matching
-        return solarSystemObjects.find(obj =>
-            obj.objectIdentifier?.toLowerCase() === name.toLowerCase() ||
-            obj.objectIdentifier?.toLowerCase() === cleanName.toLowerCase() ||
-            obj.name?.toLowerCase() === name.toLowerCase() ||
-            obj.name?.toLowerCase() === cleanName.toLowerCase()
-        ) || null;
-    }
-
-    // Create temporary object data if not found
-    const createTempSpaceObject = (name: string): SpaceObject => {
-        return {
-            id: Date.now(),
-            name: name,
-            objectIdentifier: name,
-            vocabularyItems: [
-                { id: 0, englishWord: 'Object', vietnameseTranslation: 'This is a space object.', pronunciation: '', examples: [] },
-                { id: 0, englishWord: 'Info', vietnameseTranslation: 'No detailed information available for this object.', pronunciation: '', examples: [] }
-            ],
-            interactable: true,
-            themeId: 0
-        };
+    // Function to find a space object by its identifier
+    const findSpaceObject = (name: string): SpaceObject | undefined => {
+        return solarSystemObjects.find(obj => 
+            obj.objectIdentifier.toLowerCase() === name.toLowerCase())
     }
 
     // Keyboard shortcuts to focus on planets
@@ -88,12 +51,10 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
     useKeyPressEvent('9', () => focusOnPlanet('Neptune'))
 
     const focusOnPlanet = (planetName: string) => {
-        const planet = findSpaceObject(planetName);
+        const planet = findSpaceObject(planetName)
         if (planet) {
-            setHoveredObject(planetName);
-            setSelectedObjectData(planet);
-            setShowInfo(true);
-            setCameraPosition(camera.position.clone());
+            setHoveredObject(planet)
+            setShowInfo(true)
         }
     }
 
@@ -106,9 +67,11 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
         }
 
         // Loop through all the nodes in the GLTF model
-        Object.entries(nodes).forEach(([nodeName, node]: [string, Object3D]) => {
-            // Render mesh nodes only
-            if ((node as Object3D).type === 'Mesh') {
+        Object.entries(nodes).forEach(([nodeName, node]) => {
+            // Try to find corresponding object data
+            const objectData = findSpaceObject(nodeName)
+
+            if (objectData && (node as Object3D).type === 'Mesh') {
                 const mesh = node as unknown as Mesh
 
                 objects.push(
@@ -125,8 +88,7 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                         pointerEvents="auto"
                         onPointerOver={(e) => {
                             e.stopPropagation()
-                            setHoveredObject(nodeName)
-                            document.body.style.cursor = 'pointer'
+                            setHoveredObject(objectData)
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
@@ -134,17 +96,6 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                         }}
                         onClick={(e) => {
                             e.stopPropagation()
-
-                            // Find object in data
-                            const spaceObject = findSpaceObject(nodeName) || createTempSpaceObject(nodeName)
-
-                            // Update selected object data
-                            setSelectedObjectData(spaceObject)
-
-                            // Set camera position
-                            setCameraPosition(camera.position.clone())
-
-                            // Show info
                             setShowInfo(true)
                         }}
                     />
@@ -157,6 +108,8 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
 
     return (
         <>
+
+            {/* Add ambient and directional light */}
             <ambientLight intensity={0.3} />
             <directionalLight
                 position={[10, 10, 5]}
@@ -171,27 +124,23 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                 shadow-bias={-0.00001}
             />
 
+            {/* Camera setup */}
             <PerspectiveCamera makeDefault position={[0, 5, 10]} />
 
+            {/* Render the solar system objects */}
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
 
-            {selectedObjectData && showInfo && cameraPosition && (
+            {/* Show info card when hovering and clicked */}
+            {hoveredObject && showInfo && (
                 <ObjectInfoCard
-                    name={selectedObjectData.name}
-                    id={selectedObjectData.id}
-                    objectIdentifier={selectedObjectData.objectIdentifier}
-                    vocabularyItems={selectedObjectData.vocabularyItems || []}
-                    onClose={() => {
-                        setShowInfo(false)
-                        setSelectedObjectData(null)
-                    }}
-                    position={[
-                        cameraPosition.x,
-                        cameraPosition.y,
-                        cameraPosition.z - 2
-                    ]}
+                    name={hoveredObject.name}
+                    id={hoveredObject.id}
+                    objectIdentifier={hoveredObject.objectIdentifier}
+                    vocabularyItems={hoveredObject.vocabularyItems}
+                    onClose={() => setShowInfo(false)}
+                    position={[0, 0.5, -1]}
                 />
             )}
 
@@ -205,12 +154,15 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
 }
 
 interface VRSceneProps {
-    fullScreen?: boolean,
-    modelPath?: string
+    fullScreen?: boolean
 }
 
-export default function VRScene({ fullScreen = false, modelPath = '/models/Space.glb' }: VRSceneProps) {
-    useGLTF.preload(modelPath)
+export default function VRScene({ fullScreen = false }: VRSceneProps) {
+    // Preload the models and fonts
+    useGLTF.preload('/models/Space.glb')
+    useFont.preload('/fonts/Quicksand-msdf.json')
+    useFont.preload('/fonts/TIMES.TTF-msdf.json')
+    
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
             <button
@@ -224,19 +176,14 @@ export default function VRScene({ fullScreen = false, modelPath = '/models/Space
                 Enter VR
             </button>
 
-            <Canvas 
+            <Canvas
                 className="w-full h-full"
                 shadows
                 gl={{ localClippingEnabled: true }}
             >
                 <XR store={store}>
-                    <Suspense fallback={
-                        <mesh>
-                            <boxGeometry args={[1, 1, 1]} />
-                            <meshStandardMaterial color="hotpink" />
-                        </mesh>
-                    }>
-                        <SolarSystemContent modelPath={modelPath} />
+                    <Suspense fallback={null}>
+                            <SolarSystemContent/>
                     </Suspense>
                 </XR>
             </Canvas>

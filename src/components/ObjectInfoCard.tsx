@@ -1,7 +1,7 @@
 'use client';
 
 import { VocabularyItem } from '@/app/data/solarSystem';
-import { Text, Root, Container } from '@react-three/uikit';
+import { Text, Root, Container, FontFamilyProvider } from '@react-three/uikit';
 import { Card, Button, Defaults } from '@react-three/uikit-apfel';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
@@ -41,6 +41,18 @@ export default function ObjectInfoCard({
     <group position={position} ref={groupRef}>
       <Root>
         <Defaults>
+          <FontFamilyProvider
+            quicksand={
+              {
+                normal: 'fonts/Quicksand-msdf.json',
+              }
+            }
+            timesNewRoman={
+              {
+                normal: 'fonts/TIMES.TTF-msdf.json',
+              }
+            }
+          >
           <Container
             flexDirection="column"
             alignItems="center"
@@ -59,22 +71,22 @@ export default function ObjectInfoCard({
               borderColor="rgba(255, 255, 255, 0.3)"
             >
               {/* Header with object name */}
-              <Text fontSize={30} color="white">
+              <Text fontFamily="quicksand" fontSize={30} color="white" fontWeight="normal" >
                 {name}
               </Text>
 
               {/* Object ID and identifier */}
               <Card flexDirection="row" gap={8} padding={8} backgroundColor="rgba(0, 0, 0, 0.4)" borderRadius={8}>
-                <Text fontSize={20} color="rgb(173, 216, 230)">
+                <Text fontFamily="quicksand" fontSize={20} color="rgb(173, 216, 230)" >
                   ID: {id}
                 </Text>
-                <Text fontSize={20} color="rgb(200, 200, 200)">
+                <Text fontFamily="quicksand" fontSize={20} color="rgb(200, 200, 200)" >
                   Object: {objectIdentifier}
                 </Text>
               </Card>
 
               {/* Vocabulary items section */}
-              {vocabularyItems && vocabularyItems.length > 0 && (
+              {vocabularyItems && vocabularyItems?.length > 0 && (
                 <Card
                   flexDirection="column"
                   gap={12}
@@ -82,7 +94,7 @@ export default function ObjectInfoCard({
                   backgroundColor="rgba(0, 0, 0, 0.4)"
                   borderRadius={8}
                 >
-                  <Text fontSize={24} color="white">
+                  <Text fontFamily="quicksand" fontSize={24} color="white" fontWeight="normal" >
                     Vocabulary
                   </Text>
 
@@ -96,18 +108,18 @@ export default function ObjectInfoCard({
                       borderRadius={8}
                     >
                       <Card flexDirection="row" justifyContent="space-between">
-                        <Text fontSize={20} color="white">
+                        <Text fontFamily="quicksand" fontSize={20} color="white" fontWeight="normal" >
                           {vocab.englishWord}
                         </Text>
-                        <Text fontSize={20} color="rgb(255, 255, 200)">
+                        <Text fontFamily="timesNewRoman" fontSize={20} color="rgb(255, 255, 200)" fontWeight="normal" >
                           {vocab.pronunciation}
                         </Text>
                       </Card>
-                      <Text fontSize={20} color="rgb(173, 255, 173)">
+                      <Text fontFamily="quicksand" fontSize={20} color="rgb(173, 255, 173)" fontWeight="normal" >
                         {vocab.vietnameseTranslation}
                       </Text>
                       {vocab.examples.map((example, idx) => (
-                        <Text key={idx} fontSize={16} color="rgb(200, 200, 200)">
+                        <Text key={idx} fontFamily="quicksand" fontSize={16} color="rgb(200, 200, 200)" fontWeight="normal" >
                           {example}
                         </Text>
                       ))}
@@ -125,13 +137,14 @@ export default function ObjectInfoCard({
                   padding={8}
                   onClick={onClose}
                 >
-                  <Text fontSize={18} color="white">
+                  <Text fontFamily="quicksand" fontSize={18} color="white" fontWeight="normal" >
                     Close
                   </Text>
                 </Button>
               )}
             </Card>
           </Container>
+          </FontFamilyProvider>
         </Defaults>
       </Root>
     </group>
