@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, CircularProgress } from '@heroui/react';
+import { Button } from '@heroui/react';
+import ThemeSelectionModal from './ThemeSelectionModal';
 
 interface Theme {
   id: string;
@@ -28,7 +28,7 @@ export default function HeroSection() {
       progress: 40,
       totalItems: 10,
       completedItems: 4,
-      imageUrl: '/solar-system.jpg'
+      imageUrl: '/gallery/Space.png'
     },
     {
       id: 'ocean-exploration',
@@ -88,30 +88,30 @@ export default function HeroSection() {
               Discover a new way to interact with digital content through virtual reality.
             </p>
             <div className="flex flex-wrap gap-4 pt-4 justify-center">
-              <Button 
-                color="primary" 
-                size="lg" 
+              <Button
+                color="primary"
+                size="lg"
                 className="font-medium"
                 onClick={openModal}
               >
                 Start Experience
               </Button>
-              <Button 
-                as={Link} 
+              <Button
+                as={Link}
                 href="/experiences"
-                color="primary" 
-                size="lg" 
+                color="primary"
+                size="lg"
                 className="font-medium"
                 variant="bordered"
               >
                 Browse All
               </Button>
-              <Button 
-                as={Link} 
-                href="/about" 
-                color="secondary" 
-                size="lg" 
-                className="font-medium" 
+              <Button
+                as={Link}
+                href="/about"
+                color="secondary"
+                size="lg"
+                className="font-medium"
                 variant="flat"
               >
                 Learn More
@@ -122,96 +122,14 @@ export default function HeroSection() {
       </div>
 
       {/* Theme Selection Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
+      <ThemeSelectionModal 
+        isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
-        size="lg"
-        placement="center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold">Choose Your VR Theme</h2>
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <Select
-                    label="Select Theme"
-                    placeholder="Select a VR theme"
-                    selectedKeys={selectedTheme ? [selectedTheme] : []}
-                    onSelectionChange={(keys) => {
-                      const selectedKey = Array.from(keys)[0]?.toString() || '';
-                      handleThemeSelection(selectedKey);
-                    }}
-                    className="w-full"
-                  >
-                    {themes.map((theme) => (
-                      <SelectItem key={theme.id} textValue={theme.name}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{theme.name}</span>
-                          <CircularProgress
-                            classNames={{
-                              svg: "w-6 h-6",
-                              indicator: "stroke-blue-500",
-                              track: "stroke-blue-100",
-                            }}
-                            value={theme.progress}
-                            size="sm"
-                            aria-label={`${theme.progress}% completed`}
-                            showValueLabel={false}
-                          />
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
-
-                  {selectedThemeDetails && (
-                    <div className="mt-4 p-4 border rounded-lg">
-                      <div className="mb-3 relative aspect-video rounded-md overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-300 to-purple-500 flex items-center justify-center">
-                          <p className="text-white font-medium">{selectedThemeDetails.name}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-lg">{selectedThemeDetails.name}</h3>
-                        <div className="flex items-center">
-                          <CircularProgress
-                            classNames={{
-                              svg: "w-10 h-10",
-                              indicator: "stroke-blue-500",
-                              track: "stroke-blue-100",
-                              value: "text-sm font-semibold text-blue-500",
-                            }}
-                            value={selectedThemeDetails.progress}
-                            strokeWidth={4}
-                            showValueLabel={true}
-                            valueLabel={`${selectedThemeDetails.progress}%`}
-                            aria-label={`${selectedThemeDetails.progress}% completed`}
-                          />
-                        </div>
-                      </div>
-                      <p className="text-gray-600 mb-3">{selectedThemeDetails.description}</p>
-                      <div className="text-sm text-gray-500">
-                        Progress: {selectedThemeDetails.completedItems}/{selectedThemeDetails.totalItems} items completed
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="flat" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button color="primary" onClick={startExperience} isDisabled={!selectedTheme}>
-                  Start Experience
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+        themes={themes}
+        selectedTheme={selectedTheme}
+        onThemeSelection={handleThemeSelection}
+        onStartExperience={startExperience}
+      />
     </section>
   );
 }

@@ -51,10 +51,10 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
 
         // Remove any suffix from node name
         const cleanName = name.replace(/[_\d]+$/, '');
-        
+
         // Search for object with case-insensitive matching
-        return solarSystemObjects.find(obj => 
-            obj.objectIdentifier?.toLowerCase() === name.toLowerCase() || 
+        return solarSystemObjects.find(obj =>
+            obj.objectIdentifier?.toLowerCase() === name.toLowerCase() ||
             obj.objectIdentifier?.toLowerCase() === cleanName.toLowerCase() ||
             obj.name?.toLowerCase() === name.toLowerCase() ||
             obj.name?.toLowerCase() === cleanName.toLowerCase()
@@ -100,17 +100,17 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
     // Create 3D objects from the model
     const renderSolarSystemObjects = () => {
         const objects: ReactNode[] = []
-        
+
         if (!nodes) {
             return objects;
         }
-        
+
         // Loop through all the nodes in the GLTF model
         Object.entries(nodes).forEach(([nodeName, node]: [string, Object3D]) => {
             // Render mesh nodes only
             if ((node as Object3D).type === 'Mesh') {
                 const mesh = node as unknown as Mesh
-                
+
                 objects.push(
                     <mesh
                         key={nodeName}
@@ -134,16 +134,16 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                         }}
                         onClick={(e) => {
                             e.stopPropagation()
-                            
+
                             // Find object in data
                             const spaceObject = findSpaceObject(nodeName) || createTempSpaceObject(nodeName)
-                            
+
                             // Update selected object data
                             setSelectedObjectData(spaceObject)
-                            
+
                             // Set camera position
                             setCameraPosition(camera.position.clone())
-                            
+
                             // Show info
                             setShowInfo(true)
                         }}
@@ -151,16 +151,16 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                 )
             }
         })
-        
+
         return objects
     }
 
     return (
         <>
             <ambientLight intensity={0.3} />
-            <directionalLight 
-                position={[10, 10, 5]} 
-                intensity={1} 
+            <directionalLight
+                position={[10, 10, 5]}
+                intensity={1}
                 castShadow
                 shadow-mapSize-width={1024}
                 shadow-mapSize-height={1024}
@@ -170,13 +170,13 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                 shadow-camera-bottom={-10}
                 shadow-bias={-0.00001}
             />
-            
+
             <PerspectiveCamera makeDefault position={[0, 5, 10]} />
-            
+
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
-            
+
             {selectedObjectData && showInfo && cameraPosition && (
                 <ObjectInfoCard
                     name={selectedObjectData.name}
@@ -194,10 +194,10 @@ function SolarSystemContent({ modelPath }: { modelPath: string }) {
                     ]}
                 />
             )}
-            
-            <Environment 
-                files="/environments/Sky.hdr" 
-                background 
+
+            <Environment
+                files="/environments/Sky.hdr"
+                background
             />
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>

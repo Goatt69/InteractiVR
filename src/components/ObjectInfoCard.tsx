@@ -16,22 +16,22 @@ interface ObjectInfoCardProps {
   position?: [number, number, number];
 }
 
-export default function ObjectInfoCard({ 
-  name, 
-  id, 
-  objectIdentifier, 
-  vocabularyItems, 
+export default function ObjectInfoCard({
+  name,
+  id,
+  objectIdentifier,
+  vocabularyItems,
   onClose,
   position = [0, 0, 0]
 }: ObjectInfoCardProps) {
   const groupRef = useRef<Group>(null);
-  
+
   // Create curved effect by manipulating the group's rotation to always face the camera
   useFrame(({ camera }) => {
     if (groupRef.current) {
       // Make the UI panel face the camera
       groupRef.current.lookAt(camera.position);
-      
+
       // Apply scale to the group instead of the Root component
       groupRef.current.scale.setScalar(0.5);
     }
@@ -48,7 +48,7 @@ export default function ObjectInfoCard({
             width={800}
             height="auto"
           >
-            <Card 
+            <Card
               width={750}
               borderRadius={16}
               padding={16}
@@ -62,7 +62,7 @@ export default function ObjectInfoCard({
               <Text fontSize={30} color="white">
                 {name}
               </Text>
-              
+
               {/* Object ID and identifier */}
               <Card flexDirection="row" gap={8} padding={8} backgroundColor="rgba(0, 0, 0, 0.4)" borderRadius={8}>
                 <Text fontSize={20} color="rgb(173, 216, 230)">
@@ -72,10 +72,10 @@ export default function ObjectInfoCard({
                   Object: {objectIdentifier}
                 </Text>
               </Card>
-              
+
               {/* Vocabulary items section */}
               {vocabularyItems && vocabularyItems.length > 0 && (
-                <Card 
+                <Card
                   flexDirection="column"
                   gap={12}
                   padding={12}
@@ -85,7 +85,7 @@ export default function ObjectInfoCard({
                   <Text fontSize={24} color="white">
                     Vocabulary
                   </Text>
-                  
+
                   {vocabularyItems.map((vocab) => (
                     <Card
                       key={vocab.id}
@@ -115,10 +115,10 @@ export default function ObjectInfoCard({
                   ))}
                 </Card>
               )}
-              
+
               {/* Close button */}
               {onClose && (
-                <Button 
+                <Button
                   backgroundColor="rgb(41, 82, 163)"
                   hover={{ backgroundColor: "rgb(59, 130, 246)" }}
                   borderRadius={8}
@@ -136,4 +136,4 @@ export default function ObjectInfoCard({
       </Root>
     </group>
   );
-} 
+}
