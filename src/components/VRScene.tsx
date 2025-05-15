@@ -18,7 +18,7 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
                 onKeyPress()
             }
         }
-        
+
         window.addEventListener('keypress', handleKeyPress)
         return () => {
             window.removeEventListener('keypress', handleKeyPress)
@@ -32,7 +32,7 @@ function SolarSystemContent() {
     const [showInfo, setShowInfo] = useState(false)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
-    
+
     // Function to find a space object by its identifier
     const findSpaceObject = (name: string): SpaceObject | undefined => {
         return solarSystemObjects.find(obj => 
@@ -49,7 +49,7 @@ function SolarSystemContent() {
     useKeyPressEvent('7', () => focusOnPlanet('Saturn'))
     useKeyPressEvent('8', () => focusOnPlanet('Uranus'))
     useKeyPressEvent('9', () => focusOnPlanet('Neptune'))
-    
+
     const focusOnPlanet = (planetName: string) => {
         const planet = findSpaceObject(planetName)
         if (planet) {
@@ -61,15 +61,19 @@ function SolarSystemContent() {
     // Create 3D objects from the model
     const renderSolarSystemObjects = () => {
         const objects: ReactNode[] = []
-        
+
+        if (!nodes) {
+            return objects;
+        }
+
         // Loop through all the nodes in the GLTF model
         Object.entries(nodes).forEach(([nodeName, node]) => {
             // Try to find corresponding object data
             const objectData = findSpaceObject(nodeName)
-            
+
             if (objectData && (node as Object3D).type === 'Mesh') {
                 const mesh = node as unknown as Mesh
-                
+
                 objects.push(
                     <mesh
                         key={nodeName}
@@ -81,13 +85,14 @@ function SolarSystemContent() {
                         scale={mesh.scale}
                         castShadow
                         receiveShadow
+                        pointerEvents="auto"
                         onPointerOver={(e) => {
                             e.stopPropagation()
                             setHoveredObject(objectData)
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
-                            setShowInfo(false)
+                            document.body.style.cursor = 'default'
                         }}
                         onClick={(e) => {
                             e.stopPropagation()
@@ -97,18 +102,18 @@ function SolarSystemContent() {
                 )
             }
         })
-        
+
         return objects
     }
 
     return (
         <>
-            
+
             {/* Add ambient and directional light */}
             <ambientLight intensity={0.3} />
-            <directionalLight 
-                position={[10, 10, 5]} 
-                intensity={1} 
+            <directionalLight
+                position={[10, 10, 5]}
+                intensity={1}
                 castShadow
                 shadow-mapSize-width={1024}
                 shadow-mapSize-height={1024}
@@ -138,9 +143,10 @@ function SolarSystemContent() {
                     position={[0, 0.5, -1]}
                 />
             )}
-            <Environment 
-                files="/environments/Sky.hdr" 
-                background 
+
+            <Environment
+                files="/environments/Sky.hdr"
+                background
             />
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>
@@ -159,25 +165,18 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
     
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
-            {!fullScreen && (
-                <button
-                    onClick={() => store.enterVR()}
-                    className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105 mb-4"
-                >
-                    Enter VR
-                </button>
-            )}
+            <button
+                onClick={() => store.enterVR()}
+                className={`
+                    bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg 
+                    hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105
+                    ${fullScreen ? 'absolute top-6 right-6 z-10' : 'mb-4'}
+                `}
+            >
+                Enter VR
+            </button>
 
-            {fullScreen && (
-                <button
-                    onClick={() => store.enterVR()}
-                    className="absolute top-6 right-6 z-10 bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-3 rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-500 transition-transform transform hover:scale-105"
-                >
-                    Enter VR
-                </button>
-            )}
-
-            <Canvas 
+            <Canvas
                 className="w-full h-full"
                 shadows
                 gl={{ localClippingEnabled: true }}
