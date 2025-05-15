@@ -1,15 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar } from '@heroui/react';
+import {
+  Button,
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
+  NavbarMenuToggle,
+  NavbarMenu,
+  NavbarMenuItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar,
+  useDisclosure
+} from '@heroui/react';
 import UserAuth from '../UserAuth';
 
 export default function AppNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+
+  const handleSignInClick = () => {
+    console.log('Sign In button clicked');
+    onOpen();
+    console.log('Auth drawer should be open now');
+  };
+
+  useEffect(() => {
+    console.log('Auth drawer state changed:', isOpen);
+  }, [isOpen]);
 
   const navItems = [
     { label: "Home", href: "/" },
@@ -19,7 +44,7 @@ export default function AppNavbar() {
   ];
 
   return (
-    <Navbar 
+    <Navbar
       isBordered
       isBlurred
       isMenuOpen={isMenuOpen}
@@ -27,7 +52,7 @@ export default function AppNavbar() {
       className="shadow-sm bg-white/80 backdrop-blur-md"
     >
       <NavbarContent>
-        <NavbarMenuToggle 
+        <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           className="sm:hidden"
         />
@@ -89,27 +114,14 @@ export default function AppNavbar() {
             </DropdownMenu>
           </Dropdown>
         ) : (
-          <Dropdown
-            placement="bottom-end"
-            isOpen={isAuthOpen}
-            onOpenChange={(open) => setIsAuthOpen(open)}
+          <Button
+            color="primary"
+            variant="flat"
+            className="font-medium"
+            onPress={handleSignInClick}
           >
-            <DropdownTrigger>
-              <Button
-                color="primary"
-                variant="flat"
-                className="font-medium"
-              >
-                Sign In
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              aria-label="Authentication"
-              className="p-0 min-w-[340px]"
-            >
-              <UserAuth />
-            </DropdownMenu>
-          </Dropdown>
+            Sign In
+          </Button>
         )}
       </NavbarContent>
 
@@ -125,6 +137,9 @@ export default function AppNavbar() {
           </NavbarMenuItem>
         ))}
       </NavbarMenu>
+
+      {/* Auth Component with Drawer */}
+      <UserAuth isOpen={isOpen} onOpenChange={onOpenChange} />
     </Navbar>
   );
 }
