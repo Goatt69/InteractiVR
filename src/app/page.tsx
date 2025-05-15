@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Component imports
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../components/ui/Navbar";
+import Footer from "../components/ui/Footer";
 import HeroSection from "../components/HeroSection";
-import ExperiencesSection from "../components/ExperiencesSection";
 import ExperienceModal from "../components/ExperienceModal";
+import GallerySection from "../components/GallerySection";
 
 // Define VR experiences data
 const experiences = [
@@ -16,7 +16,7 @@ const experiences = [
     id: "space",
     name: 'Space Exploration',
     path: "/models/Space.glb",
-    image: "/textures/space.jpg",
+    image: "/gallery/Space.png",
     description: "The solar system is a vast expanse of space dominated by the Sun, around which eight planets and countless smaller bodies revolve in a delicate cosmic dance.",
     rating: 4,
   },
@@ -24,7 +24,7 @@ const experiences = [
     id: 'dacongvien',
     name: 'Park Environment',
     path: "/models/DACongVien.glb",
-    image: "/models/DACongVienPreview.jpg",
+    image: "/gallery/DACongVien.jpg",
     description: "A detailed model of a park showcasing natural elements, recreational areas, and scenic pathways perfect for virtual tours.",
     rating: 5,
   },
@@ -95,13 +95,10 @@ export default function Home() {
         {/* Hero Section */}
         <HeroSection />
         
-        {/* VR Experiences Section */}
-        <ExperiencesSection 
-          experiences={experiences} 
-          onSelectExperience={(experience) => {
-            handleSelectExperience(experience);
-            openModal();
-          }} 
+        {/* Gallery Section */}
+        <GallerySection
+          title="VR Gallery"
+          subtitle="Explore our collection of stunning VR environments and experiences."
         />
       </main>
       
