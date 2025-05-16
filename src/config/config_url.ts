@@ -14,4 +14,12 @@ export const Config_URL = {
       register: `${baseUrl}auth/register`,
     };
   },
+  get vocabulary() {
+    return {
+      getByObjectId: (objectId: number) => `${baseUrl}vocabulary/object/${objectId}`,
+      create: (objectId: number) => `${baseUrl}vocabulary/object/${objectId}`,
+      update: (objectId: number, id: number) => `${baseUrl}vocabulary/object/${objectId}/vocabulary/${id}`,
+      delete: (objectId: number, id: number) => `${baseUrl}vocabulary/object/${objectId}/vocabulary/${id}`,
+    };
+  },
 };
