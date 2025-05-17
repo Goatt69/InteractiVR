@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Config_URL } from "../../config/config_url";
+import { Config_URL } from "../../config/configURL";
 
 interface LoginProps {
   onLoginSuccess: () => void;

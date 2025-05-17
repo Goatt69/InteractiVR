@@ -6,7 +6,7 @@ import { Text, Root, Container, FontFamilyProvider } from '@react-three/uikit';
 import { Card, Button, Defaults } from '@react-three/uikit-apfel';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
-import { Config_URL } from '@/config/config_url';
+import { Config_URL } from '@/config/configURL';
 
 interface Props {
   objectId: number;
