@@ -1,8 +1,11 @@
 import { config } from '../config/configURL';
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios"
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiErrorResponse, ApiResponse } from "../types/api.types";
 
-class ApiService {
+// Token key used for localStorage
+const AUTH_TOKEN_KEY = 'auth_token';
+
+export class ApiService {
     private api: AxiosInstance
     private static instance: ApiService
 
@@ -39,9 +42,19 @@ class ApiService {
 
     public static getAuthToken(): string | null {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('auth_token')
+            return localStorage.getItem(AUTH_TOKEN_KEY)
         }
         return null
+    }
+    
+    public static setAuthToken(token: string | null): void {
+        if (typeof window !== 'undefined') {
+            if (token) {
+                localStorage.setItem(AUTH_TOKEN_KEY, token);
+            } else {
+                localStorage.removeItem(AUTH_TOKEN_KEY);
+            }
+        }
     }
 
     private async handleApiError(error: AxiosError): Promise<never> {
@@ -52,12 +65,31 @@ class ApiService {
         }
 
         if (error.response?.data) {
-            errorResponse.message = error.response.data.message || errorResponse.message;
-            errorResponse.error = error.response.data.error || [];
+            const responseData = error.response.data as any;
+            errorResponse.message = responseData.message || errorResponse.message;
+            
+            // Handle different error formats
+            if (Array.isArray(responseData.error)) {
+                errorResponse.error = responseData.error;
+            } else if (responseData.errors) {
+                errorResponse.error = responseData.errors;
+            } else if (responseData.statusCode && responseData.error) {
+                // NestJS default error format
+                errorResponse.message = responseData.error;
+                errorResponse.error = [responseData.message];
+            }
         }
 
+        // Handle unauthorized errors - token expired or invalid
         if (error.response?.status === 401) {
-
+            // Clear the token on 401 responses
+            ApiService.setAuthToken(null);
+            
+            // If we're on the client side, we could redirect to login
+            if (typeof window !== 'undefined') {
+                // We'll let the authentication context handle the redirect
+                console.warn('Authentication token expired or invalid');
+            }
         }
 
         return Promise.reject(errorResponse)
