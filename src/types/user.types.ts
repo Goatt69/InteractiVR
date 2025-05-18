@@ -6,6 +6,25 @@ enum Role {
     USER = 'user'
 }
 
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    access_token: string;
+    user: IUser;
+}
+
+export interface RegisterResponse {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    role: string;
+}
+
 export interface ICreateUser {
     name: string;
     email: string;

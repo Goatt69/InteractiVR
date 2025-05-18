@@ -3,32 +3,13 @@ import { ApiResponse } from '@/types/api.types';
 import { ICreateUser, IUser } from '@/types/user.types';
 import { jwtDecode } from 'jwt-decode';
 import { config } from '@/config/configURL';
-
+import { LoginRequest, LoginResponse, RegisterResponse } from '@/types/user.types';
 interface JwtPayload {
   sub: string;
   email: string;
   role: string;
   exp: number;
   iat: number;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  access_token: string;
-  user: IUser;
-}
-
-export interface RegisterResponse {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  role: string;
 }
 
 /**
@@ -47,7 +28,7 @@ class AuthService {
    */
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     const response = await apiService.post<LoginResponse>(this.endpoints.login, credentials);
-    
+
     if (response.success && response.data) {
       this.setToken(response.data.access_token);
       this.setUser(response.data.user);
@@ -72,7 +53,7 @@ class AuthService {
   async getProfile(): Promise<ApiResponse<IUser>> {
     return await apiService.get<IUser>(this.endpoints.profile);
   }
-  
+
   /**
    * Log out the current user - both client-side and server-side
    * @returns Logout response from server
@@ -146,7 +127,7 @@ class AuthService {
       localStorage.removeItem(this.userKey);
     }
   }
-  
+
   /**
    * Check if the token is expired
    * @param token - JWT token to check
@@ -183,7 +164,7 @@ class AuthService {
       return null;
     }
   }
-  
+
   /**
    * Get authentication redirect URL based on auth status and page requirements
    * @param isAuthenticated - Whether user is authenticated

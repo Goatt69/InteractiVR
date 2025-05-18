@@ -46,7 +46,7 @@ export class ApiService {
         }
         return null
     }
-    
+
     public static setAuthToken(token: string | null): void {
         if (typeof window !== 'undefined') {
             if (token) {
@@ -67,7 +67,7 @@ export class ApiService {
         if (error.response?.data) {
             const responseData = error.response.data as any;
             errorResponse.message = responseData.message || errorResponse.message;
-            
+
             // Handle different error formats
             if (Array.isArray(responseData.error)) {
                 errorResponse.error = responseData.error;
@@ -84,7 +84,7 @@ export class ApiService {
         if (error.response?.status === 401) {
             // Clear the token on 401 responses
             ApiService.setAuthToken(null);
-            
+
             // If we're on the client side, we could redirect to login
             if (typeof window !== 'undefined') {
                 // We'll let the authentication context handle the redirect
