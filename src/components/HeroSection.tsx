@@ -4,76 +4,30 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@heroui/react';
 import ThemeSelectionModal from './ThemeSelectionModal';
-
-interface Theme {
-  id: string;
-  name: string;
-  description: string;
-  progress: number;
-  totalItems: number;
-  completedItems: number;
-  imageUrl: string;
-}
+import { useRouter } from 'next/navigation';
 
 export default function HeroSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<string>('');
-  
-  // Sample themes data
-  const themes: Theme[] = [
-    {
-      id: 'solar-system',
-      name: 'Solar System',
-      description: 'The solar system is a vast expanse of space dominated by the Sun, around which eight planets and countless smaller bodies revolve in a delicate cosmic dance.',
-      progress: 40,
-      totalItems: 10,
-      completedItems: 4,
-      imageUrl: '/gallery/Space.png'
-    },
-    {
-      id: 'ocean-exploration',
-      name: 'Ocean Exploration',
-      description: 'Dive into the mysterious depths of the ocean and discover fascinating marine life, underwater formations, and the beauty beneath the waves.',
-      progress: 70,
-      totalItems: 10,
-      completedItems: 7,
-      imageUrl: '/ocean.jpg'
-    },
-    {
-      id: 'ancient-civilizations',
-      name: 'Ancient Civilizations',
-      description: 'Travel back in time and walk among the greatest civilizations in history. Explore ancient architecture, art, and cultural practices.',
-      progress: 20,
-      totalItems: 10,
-      completedItems: 2,
-      imageUrl: '/ancient.jpg'
-    },
-    {
-      id: 'space-station',
-      name: 'Space Station',
-      description: 'Experience life aboard a space station and learn about the challenges and innovations of space travel and habitation.',
-      progress: 90,
-      totalItems: 10,
-      completedItems: 9,
-      imageUrl: '/space-station.jpg'
-    },
-  ];
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  const router = useRouter();
 
   const handleThemeSelection = (themeId: string) => {
     setSelectedTheme(themeId);
   };
 
   const startExperience = () => {
+    router.push(`/vr-experience?model=${selectedTheme}`);
     console.log(`Starting experience with theme: ${selectedTheme}`);
     closeModal();
     // Additional logic to launch the VR experience
   };
 
-  // Get the selected theme details
-  const selectedThemeDetails = themes.find(theme => theme.id === selectedTheme);
+  // We don't need to find the selected theme details here anymore
+  // The ThemeSelectionModal now handles fetching and displaying theme details
 
   return (
     <section className="py-16 bg-gradient-to-b from-blue-50 to-white">
@@ -122,10 +76,9 @@ export default function HeroSection() {
       </div>
 
       {/* Theme Selection Modal */}
-      <ThemeSelectionModal 
+      <ThemeSelectionModal
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
-        themes={themes}
         selectedTheme={selectedTheme}
         onThemeSelection={handleThemeSelection}
         onStartExperience={startExperience}

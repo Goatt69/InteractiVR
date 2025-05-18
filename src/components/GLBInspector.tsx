@@ -42,7 +42,7 @@ function downloadInspectionResult(result: GLBInspectionResult, filename: string 
 
     document.body.removeChild(link);
     URL.revokeObjectURL(href);
-    
+
     console.log('JSON file downloaded:', filename);
 }
 

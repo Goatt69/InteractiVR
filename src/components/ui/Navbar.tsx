@@ -17,19 +17,32 @@ import {
   DropdownMenu,
   DropdownItem,
   Avatar,
-  useDisclosure
+  useDisclosure,
+  Tooltip
 } from '@heroui/react';
 import UserAuth from '../UserAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function AppNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const { user, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   const handleSignInClick = () => {
-    console.log('Sign In button clicked');
     onOpen();
-    console.log('Auth drawer should be open now');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
   };
 
   useEffect(() => {
@@ -88,27 +101,37 @@ export default function AppNavbar() {
       </NavbarContent>
 
       <NavbarContent justify="end">
-        {isLoggedIn ? (
+        {!isMounted ? null : isAuthenticated ? (
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Avatar
+                isBordered
                 as="button"
                 className="transition-transform"
-                name="User"
+                name={user?.name || 'User'}
                 size="sm"
-                src="https://i.pravatar.cc/150?img=4"
+                src='https://avatar.iran.liara.run/public'
+                showFallback
+                fallback={user?.name?.[0]?.toUpperCase() || 'U'}
               />
             </DropdownTrigger>
-            <DropdownMenu aria-label="User actions">
-              <DropdownItem key="profile">Profile</DropdownItem>
-              <DropdownItem key="settings">Settings</DropdownItem>
-              <DropdownItem key="experiences">My Experiences</DropdownItem>
-              <DropdownItem key="help">Help & Feedback</DropdownItem>
-              <DropdownItem
-                key="logout"
-                color="danger"
-                onClick={() => setIsLoggedIn(false)}
-              >
+            <DropdownMenu aria-label="Profile Actions" variant="flat">
+              <DropdownItem key="profile" className="h-14 gap-2">
+                <p className="font-semibold">Signed in as</p>
+                <p className="font-semibold">{user?.email || 'User'}</p>
+              </DropdownItem>
+              <DropdownItem key="dashboard" href="/dashboard">Dashboard</DropdownItem>
+              <DropdownItem key="settings" href="/settings">My Settings</DropdownItem>
+              <DropdownItem key="team_settings" href="/team">Team Settings</DropdownItem>
+              <DropdownItem key="analytics" href="/analytics">Analytics</DropdownItem>
+              <DropdownItem key="experiences" href="/experiences">My Experiences</DropdownItem>
+              <DropdownItem key="help_and_feedback">Help & Feedback</DropdownItem>
+              {user?.role === 'admin' ? (
+                <DropdownItem key="admin" href="/admin" className="text-primary">
+                  Admin Panel
+                </DropdownItem>
+              ): (null)}
+              <DropdownItem key="logout" color="danger" onPress={handleLogout}>
                 Log Out
               </DropdownItem>
             </DropdownMenu>
@@ -116,9 +139,8 @@ export default function AppNavbar() {
         ) : (
           <Button
             color="primary"
-            variant="flat"
-            className="font-medium"
             onPress={handleSignInClick}
+            variant="flat"
           >
             Sign In
           </Button>
