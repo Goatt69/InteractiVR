@@ -9,12 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroui/react": "^2.7.8",
     "@react-three/drei": "10.0.6",
     "@react-three/fiber": "9.1.2",
+    "@react-three/postprocessing": "^3.0.4",
     "@react-three/uikit": "0.8.15",
     "@react-three/uikit-apfel": "0.8.15",
     "@react-three/xr": "6.6.14",
     "axios": "1.9.0",
+    "framer-motion": "12.11.0",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.510.0",
     "next": "15.3.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -26,8 +31,8 @@
     "@types/node": "22.14.1",
     "@types/react": "19.1.2",
     "@types/react-dom": "19.1.2",
-    "eslint": "9.25.0",
-    "eslint-config-next": "15.2.4",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.3.1",
     "tailwindcss": "3.4.17",
     "typescript": "5.8.3"
   }
