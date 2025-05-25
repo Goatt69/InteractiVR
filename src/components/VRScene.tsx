@@ -29,8 +29,12 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
     }, [targetKey, onKeyPress])
 }
 
-function SolarSystemContent() {
-    const { nodes } = useGLTF('/models/Space.glb')
+interface SolarSystemContentProps {
+    modelPath: string
+}
+
+function SolarSystemContent({ modelPath }: SolarSystemContentProps) {
+    const { nodes } = useGLTF(modelPath)
     const [hoveredObject, setHoveredObject] = useState<IObject | null>(null)
     const [showInfo, setShowInfo] = useState(false)
     const { session } = useXR()
@@ -65,20 +69,20 @@ function SolarSystemContent() {
 
         fetchObjects()
     }, [])
-    
+
     // Function to fetch vocabulary for all objects
     const fetchAllVocabulary = async (objectsList: IObject[]) => {
         try {
             setLoadingVocabulary(true)
             const vocabMap: Record<number, IVocabulary[]> = {}
-            
+
             // Create an array of promises to fetch vocabulary for each object
             const fetchPromises = objectsList.map(async (obj) => {
                 try {
                     const response = await vocabularyService.getVocabularyByObjectId(obj.id)
                     if (response.success && response.data) {
                         vocabMap[obj.id] = response.data
-                        
+
                         // Parse examples if they're stored as JSON string
                         response.data.forEach(vocab => {
                             if (typeof vocab.examples === 'string') {
@@ -95,10 +99,10 @@ function SolarSystemContent() {
                     console.error(`Error fetching vocabulary for object ${obj.id}:`, error)
                 }
             })
-            
+
             // Wait for all vocabulary fetches to complete
             await Promise.all(fetchPromises)
-            
+
             // Update the vocabulary map
             setVocabularyMap(vocabMap)
         } catch (error) {
@@ -111,7 +115,7 @@ function SolarSystemContent() {
 
     // Function to find a space object by its identifier
     const findSpaceObject = (name: string): IObject | undefined => {
-        return objects.find(obj => 
+        return objects.find(obj =>
             obj.objectIdentifier.toLowerCase() === name.toLowerCase())
     }
 
@@ -233,19 +237,19 @@ function SolarSystemContent() {
             />
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>
-    )
+    );
 }
 
 interface VRSceneProps {
     fullScreen?: boolean
+    modelPath: string
 }
 
-export default function VRScene({ fullScreen = false }: VRSceneProps) {
-    // Preload the models and fonts
-    useGLTF.preload('/models/Space.glb')
+export default function VRScene({ fullScreen = false, modelPath }: VRSceneProps) {
+    // Preload the models
+    useGLTF.preload(modelPath)
     useFont.preload('/fonts/Quicksand-msdf.json')
     useFont.preload('/fonts/TIMES.TTF-msdf.json')
-    
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
             <button
@@ -266,7 +270,7 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             >
                 <XR store={store}>
                     <Suspense fallback={null}>
-                            <SolarSystemContent/>
+                            <SolarSystemContent modelPath={modelPath}/>
                     </Suspense>
                 </XR>
             </Canvas>
