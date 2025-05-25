@@ -1,8 +1,7 @@
 import { config } from "@/config/configURL";
-import { ApiResponse } from "@/types/api.types";
-import { ITheme } from "@/types/theme.types";
 import apiService from "./api";
-
+import { ITheme } from "@/types/theme.types";
+import { ApiResponse } from "@/types/api.types";
 
 export default class ThemeService {
     private endpoint = config.api.endpoint.theme;

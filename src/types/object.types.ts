@@ -3,6 +3,7 @@ import { IVocabulary } from "./vocabulary.types";
 
 
 export interface IObject {
+    id: number;
     name: string;
     objectIdentifier: string;
     thumbnailUrl?: string;

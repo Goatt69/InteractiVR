@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, CircularProgress, Image, Spinner } from '@heroui/react';
 import { ITheme, ThemeWithProgress } from '@/types/theme.types';
 import { ApiResponse } from '@/types/api.types';
-import ThemeService, { themeService } from '@/services/theme.service';
+import { themeService } from '@/services/theme.service';
 
 interface ThemeSelectionModalProps {
   isOpen: boolean;
@@ -41,6 +41,8 @@ export default function ThemeSelectionModal({
                 id: theme.id?.toString() || Math.random().toString(36).substring(7),
                 name: theme.name,
                 description: theme.description,
+                sceneUrl: theme.sceneUrl,
+                skyboxUrl: theme.skyboxUrl,
                 imageUrl: theme.imageUrl,
                 difficulty: theme.difficulty,
                 isLocked: theme.isLocked,

@@ -19,7 +19,7 @@ import {
 
 export default function AdminPage() {
   return (
-    <RoleGuard allowedRoles={['admin']} redirectTo="/dashboard">
+    <RoleGuard allowedRoles={['admin']} redirectTo="/">
       <AdminDashboard />
     </RoleGuard>
   );

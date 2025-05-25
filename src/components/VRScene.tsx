@@ -5,8 +5,11 @@ import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useState, Suspense, ReactNode, useRef, useEffect } from 'react'
 import { useGLTF, OrbitControls, PerspectiveCamera, Environment, useFont } from '@react-three/drei';
 import { Mesh, Object3D, Group } from 'three'
-import solarSystemObjects, { SpaceObject } from '@/app/data/solarSystem'
 import ObjectInfoCard from './ObjectInfoCard'
+import { IObject } from '@/types/object.types';
+import { IVocabulary } from '@/types/vocabulary.types';
+import { objectService } from '@/services/object.service';
+import { vocabularyService } from '@/services/vocabulary.service';
 
 const store = createXRStore()
 
@@ -26,16 +29,93 @@ const useKeyPressEvent = (targetKey: string, onKeyPress: () => void) => {
     }, [targetKey, onKeyPress])
 }
 
-function SolarSystemContent() {
-    const { nodes } = useGLTF('/models/Space.glb')
-    const [hoveredObject, setHoveredObject] = useState<SpaceObject | null>(null)
+interface SolarSystemContentProps {
+    modelPath: string
+}
+
+function SolarSystemContent({ modelPath }: SolarSystemContentProps) {
+    const { nodes } = useGLTF(modelPath)
+    const [hoveredObject, setHoveredObject] = useState<IObject | null>(null)
     const [showInfo, setShowInfo] = useState(false)
     const { session } = useXR()
     const planetsRef = useRef<Group>(null)
+    const [objects, setObjects] = useState<IObject[]>([])
+    const [vocabularyMap, setVocabularyMap] = useState<Record<number, IVocabulary[]>>({})
+    const [loading, setLoading] = useState(true)
+    const [loadingVocabulary, setLoadingVocabulary] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [vocabularyError, setVocabularyError] = useState<string | null>(null)
+
+    // Fetch objects from API
+    useEffect(() => {
+        const fetchObjects = async () => {
+            try {
+                setLoading(true)
+                const response = await objectService.getObjects()
+                if (response.success && response.data) {
+                    setObjects(response.data)
+                    // After fetching objects, fetch vocabulary for each object
+                    await fetchAllVocabulary(response.data)
+                } else {
+                    setError('Failed to fetch objects')
+                }
+            } catch (error) {
+                console.error('Error fetching objects:', error)
+                setError('Error loading objects')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchObjects()
+    }, [])
+
+    // Function to fetch vocabulary for all objects
+    const fetchAllVocabulary = async (objectsList: IObject[]) => {
+        try {
+            setLoadingVocabulary(true)
+            const vocabMap: Record<number, IVocabulary[]> = {}
+
+            // Create an array of promises to fetch vocabulary for each object
+            const fetchPromises = objectsList.map(async (obj) => {
+                try {
+                    const response = await vocabularyService.getVocabularyByObjectId(obj.id)
+                    if (response.success && response.data) {
+                        vocabMap[obj.id] = response.data
+
+                        // Parse examples if they're stored as JSON string
+                        response.data.forEach(vocab => {
+                            if (typeof vocab.examples === 'string') {
+                                try {
+                                    vocab.examples = JSON.parse(vocab.examples)
+                                } catch (e) {
+                                    // If not valid JSON, keep as is
+                                    console.warn(`Could not parse examples for vocab ID ${vocab.id}`)
+                                }
+                            }
+                        })
+                    }
+                } catch (error) {
+                    console.error(`Error fetching vocabulary for object ${obj.id}:`, error)
+                }
+            })
+
+            // Wait for all vocabulary fetches to complete
+            await Promise.all(fetchPromises)
+
+            // Update the vocabulary map
+            setVocabularyMap(vocabMap)
+        } catch (error) {
+            console.error('Error fetching vocabulary:', error)
+            setVocabularyError('Error loading vocabulary')
+        } finally {
+            setLoadingVocabulary(false)
+        }
+    }
 
     // Function to find a space object by its identifier
-    const findSpaceObject = (name: string): SpaceObject | undefined => {
-        return solarSystemObjects.find(obj => 
+    const findSpaceObject = (name: string): IObject | undefined => {
+        return objects.find(obj =>
             obj.objectIdentifier.toLowerCase() === name.toLowerCase())
     }
 
@@ -55,6 +135,8 @@ function SolarSystemContent() {
         if (planet) {
             setHoveredObject(planet)
             setShowInfo(true)
+        } else {
+            console.warn(`Planet ${planetName} not found in loaded objects`)
         }
     }
 
@@ -89,6 +171,7 @@ function SolarSystemContent() {
                         onPointerOver={(e) => {
                             e.stopPropagation()
                             setHoveredObject(objectData)
+                            document.body.style.cursor = 'pointer'
                         }}
                         onPointerOut={() => {
                             setHoveredObject(null)
@@ -131,17 +214,21 @@ function SolarSystemContent() {
             <group ref={planetsRef}>
                 {renderSolarSystemObjects()}
             </group>
-
             {/* Show info card when hovering and clicked */}
             {hoveredObject && showInfo && (
-                <ObjectInfoCard
-                    name={hoveredObject.name}
-                    id={hoveredObject.id}
-                    objectIdentifier={hoveredObject.objectIdentifier}
-                    vocabularyItems={hoveredObject.vocabularyItems}
-                    onClose={() => setShowInfo(false)}
-                    position={[0, 0.5, -1]}
-                />
+                <group position={[0, 0.5, -1]}>
+                    <Suspense fallback={null}>
+                        <ObjectInfoCard
+                            id={hoveredObject.id}
+                            name={hoveredObject.name}
+                            objectIdentifier={hoveredObject.objectIdentifier}
+                            vocabularyItems={vocabularyMap[hoveredObject.id] || []}
+                            onClose={() => setShowInfo(false)}
+                            position={[0, 0, 0]}
+                            isLoading={loadingVocabulary}
+                        />
+                    </Suspense>
+                </group>
             )}
 
             <Environment
@@ -150,19 +237,19 @@ function SolarSystemContent() {
             />
             {!session && <OrbitControls makeDefault enableZoom={true} enablePan={true} />}
         </>
-    )
+    );
 }
 
 interface VRSceneProps {
     fullScreen?: boolean
+    modelPath: string
 }
 
-export default function VRScene({ fullScreen = false }: VRSceneProps) {
-    // Preload the models and fonts
-    useGLTF.preload('/models/Space.glb')
+export default function VRScene({ fullScreen = false, modelPath }: VRSceneProps) {
+    // Preload the models
+    useGLTF.preload(modelPath)
     useFont.preload('/fonts/Quicksand-msdf.json')
     useFont.preload('/fonts/TIMES.TTF-msdf.json')
-    
     return (
         <div className={`relative ${fullScreen ? 'h-screen w-full' : 'h-[80vh] w-full'}`}>
             <button
@@ -183,7 +270,7 @@ export default function VRScene({ fullScreen = false }: VRSceneProps) {
             >
                 <XR store={store}>
                     <Suspense fallback={null}>
-                            <SolarSystemContent/>
+                            <SolarSystemContent modelPath={modelPath}/>
                     </Suspense>
                 </XR>
             </Canvas>
