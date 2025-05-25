@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "Solar System",
+    "description": "Explore the solar system in VR",
+    "imageUrl": "/gallery/Space.png",
+    "sceneUrl": "/models/Space.glb",
+    "skyboxUrl": "/environments/Sky.hdr",
+    "isLocked": false,
+    "requiredThemeId": null,
+    "createdAt": "2025-04-27T16:34:10.733Z",
+    "updatedAt": "2025-04-27T16:34:10.733Z"
+  }
+]
