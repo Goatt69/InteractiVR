@@ -16,7 +16,7 @@ export const errors = {
   },
   password: {
     required: 'Password is required',
-    tooShort: 'Password must be at least 6 characters',
+    tooShort: 'Password must be at least 8 characters',
     missingUppercase: 'Password must contain at least one uppercase letter',
     missingLowercase: 'Password must contain at least one lowercase letter',
     missingNumber: 'Password must contain at least one number',
@@ -42,7 +42,7 @@ export const registerSchema = z.object({
     .email({ message: errors.email.invalid }),
   password: z.string()
     .min(1, { message: errors.password.required })
-    .min(6, { message: errors.password.tooShort })
+    .min(8, { message: errors.password.tooShort })
     .regex(/[A-Z]/, { message: errors.password.missingUppercase })
     .regex(/[a-z]/, { message: errors.password.missingLowercase })
     .regex(/[0-9]/, { message: errors.password.missingNumber })
@@ -52,7 +52,7 @@ export const registerSchema = z.object({
 export const updateProfileSchema = registerSchema.partial().extend({
   currentPassword: z.string().optional(),
   newPassword: z.string()
-    .min(6, { message: errors.password.tooShort })
+    .min(8, { message: errors.password.tooShort })
     .regex(/[A-Z]/, { message: errors.password.missingUppercase })
     .regex(/[a-z]/, { message: errors.password.missingLowercase })
     .regex(/[0-9]/, { message: errors.password.missingNumber })

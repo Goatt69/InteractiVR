@@ -90,7 +90,7 @@ export default function UserAuth({ isOpen, onOpenChange }: UserAuthProps) {
 
     if (!value) {
       errorsList.push(errors.password.required);
-    } else if (value.length < 6) {
+    } else if (value.length < 8) {
       errorsList.push(errors.password.tooShort);
     }
 

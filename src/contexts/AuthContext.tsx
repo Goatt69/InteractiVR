@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.success && response.data) {
         setUser(response.data.user);
-        router.push('/dashboard'); // Redirect to dashboard after login
+        router.push('/');
       }
     } catch (err: any) {
       console.error('Login error:', err);
