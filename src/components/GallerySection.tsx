@@ -22,61 +22,37 @@ export default function GallerySection({
     // This ensures the image URLs start with http/https which is required by GridMotion
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     setGalleryImages([
-      `${baseUrl}/gallery/Space.png`
+      `${baseUrl}/gallery/Show1.jpg`,
+      `${baseUrl}/gallery/Show2.png`,
+      `${baseUrl}/gallery/Show3.png`,
+      `${baseUrl}/gallery/Show4.png`,
     ]);
   }, []);
 
-  const handleItemClick = (imagePath: string) => {
-    console.log('Image clicked:', imagePath);
-  };
 
-  // Prepare items for GridMotion following the example format
+  // Prepare items for GridMotion following the required pattern: label, JSX content, image URL
   const gridItems: (string | React.ReactNode)[] = [];
 
   // Process gallery images for GridMotion
   galleryImages.forEach((imagePath, index) => {
-    // Add image name as text item
+    // Add image name as a label
     const imageName = imagePath.split('/').pop()?.split('.')[0] || `Image ${index + 1}`;
     gridItems.push(imageName);
 
-    // Add a JSX element with image details
-    gridItems.push(
-      <div
-        key={`jsx-item-${index}`}
-        className="p-2 flex flex-col items-center justify-center h-full w-full cursor-pointer"
-        onClick={() => handleItemClick(imagePath)}
-      >
-        <h3 className="text-lg font-semibold text-white mb-1">{imageName}</h3>
-        <p className="text-sm text-white/80 text-center line-clamp-2">Click to view full image</p>
-      </div>
-    );
-
-    // Add the complete image URL - this is what GridMotion expects
+    // Add the image URL
     gridItems.push(imagePath);
   });
 
-  // Ensure we have at least 28 items (required by GridMotion)
-  while (gridItems.length < 28) {
+  // Ensure we have enough items for GridMotion (maintaining the pattern)
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  while (gridItems.length < 27) {
     const itemIndex = Math.floor(gridItems.length / 3);
 
-    // Add placeholder items in the same pattern: text, JSX, image URL
-    gridItems.push(`Placeholder ${itemIndex + 1}`);
+    // Add a label
+    gridItems.push(`Show ${itemIndex + 1}`);
 
-    gridItems.push(
-      <div
-        key={`placeholder-${itemIndex}`}
-        className="p-2 flex flex-col items-center justify-center h-full w-full"
-      >
-        <h3 className="text-lg font-semibold text-white mb-1">Placeholder</h3>
-        <p className="text-sm text-white/80 text-center line-clamp-2">Gallery item placeholder</p>
-      </div>
-    );
-
-    // Add a placeholder image URL - ensure it's a valid URL that GridMotion can display
-    // Using the same image for placeholders to ensure they display properly
-    // Must start with http/https for GridMotion to recognize it as an image
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    gridItems.push(`${baseUrl}/gallery/Space.png`);
+    // Add image URL
+    gridItems.push(`${baseUrl}/gallery/Show${itemIndex + 1}.png`);
   }
 
 
