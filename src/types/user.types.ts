@@ -13,7 +13,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
     access_token: string;
-    user: IUser;
+    user: IUser; // IUser no longer contains password field
 }
 
 export interface RegisterResponse {
@@ -35,7 +35,6 @@ export interface IUser {
     id:        string;
     email:     string;
     name:      string;
-    password:  string;
     createdAt: Date;
     updatedAt: Date;
     role:      Role;

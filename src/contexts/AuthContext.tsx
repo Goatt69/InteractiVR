@@ -37,7 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             const response = await authService.getProfile();
             if (response.success) {
-              setUser(response.data);
+              // Ensure we're not storing any sensitive data in state
+              const { password, ...safeUserData } = response.data as any;
+              setUser(safeUserData as IUser);
             } else {
               // If token is invalid or expired, clear auth
               await authService.logout();
@@ -75,7 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authService.login({ email, password });
 
       if (response.success && response.data) {
-        setUser(response.data.user);
+        // Ensure we're not storing any sensitive data in state
+        const { password, ...safeUserData } = response.data.user as any;
+        setUser(safeUserData as IUser);
         router.push('/');
       }
     } catch (err: any) {

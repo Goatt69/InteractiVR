@@ -114,7 +114,9 @@ class AuthService {
    */
   setUser(user: IUser): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(this.userKey, JSON.stringify(user));
+      // Create a copy of the user object without the password field (if it exists)
+      const { password, ...safeUserData } = user as any;
+      localStorage.setItem(this.userKey, JSON.stringify(safeUserData));
     }
   }
 
